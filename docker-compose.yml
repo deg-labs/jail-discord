@@ -1,0 +1,12 @@
+version: "3.9"
+
+services:
+  jail-discord:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    restart: unless-stopped

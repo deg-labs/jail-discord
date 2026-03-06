@@ -1,0 +1,40 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: "${SERVICE_NAME}"
+  annotations:
+    run.googleapis.com/invoker-iam-disabled: "true"
+    run.googleapis.com/ingress: "all"
+    run.googleapis.com/maxScale: "1"
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "1"
+    spec:
+      containers:
+        - image: "${IMAGE}"
+          resources:
+            limits:
+              cpu: "0.5"
+              memory: "512Mi"
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            failureThreshold: 30
+            periodSeconds: 2
+          env:
+            - name: DISCORD_BOT_TOKEN
+              value: "${DISCORD_BOT_TOKEN}"
+            - name: AUTO_ROLE_TARGET_ROLE
+              value: "${AUTO_ROLE_TARGET_ROLE}"
+            - name: AUTO_ROLE_TARGET_KEYWORD
+              value: "${AUTO_ROLE_TARGET_KEYWORD}"
+            - name: AUTO_ROLE_INTERVAL_MINUTES
+              value: "${AUTO_ROLE_INTERVAL_MINUTES}"
+            - name: AUTO_ROLE_BLACK_LUMINANCE_THRESHOLD
+              value: "${AUTO_ROLE_BLACK_LUMINANCE_THRESHOLD}"
+            - name: AUTO_ROLE_BLACK_RATIO_THRESHOLD
+              value: "${AUTO_ROLE_BLACK_RATIO_THRESHOLD}"
