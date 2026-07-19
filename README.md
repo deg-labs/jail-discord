@@ -1,3 +1,17 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Discord 自動ロール付与バッチ](#discord-%E8%87%AA%E5%8B%95%E3%83%AD%E3%83%BC%E3%83%AB%E4%BB%98%E4%B8%8E%E3%83%90%E3%83%83%E3%83%81)
+  - [機能](#%E6%A9%9F%E8%83%BD)
+  - [必要な環境変数](#%E5%BF%85%E8%A6%81%E3%81%AA%E7%92%B0%E5%A2%83%E5%A4%89%E6%95%B0)
+  - [Discord Bot 側で必要な設定](#discord-bot-%E5%81%B4%E3%81%A7%E5%BF%85%E8%A6%81%E3%81%AA%E8%A8%AD%E5%AE%9A)
+  - [ローカル起動（Docker Compose）](#%E3%83%AD%E3%83%BC%E3%82%AB%E3%83%AB%E8%B5%B7%E5%8B%95docker-compose)
+  - [ログ確認](#%E3%83%AD%E3%82%B0%E7%A2%BA%E8%AA%8D)
+  - [構成](#%E6%A7%8B%E6%88%90)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Discord 自動ロール付与バッチ
 
 このBotは定期バッチでサーバーメンバーを走査し、条件に一致したユーザーへロールを付与します。
