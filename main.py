@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 from typing import Optional
 
@@ -7,6 +8,12 @@ import discord
 from discord.ext import commands
 
 from member_role_batch import AutoRoleBatchService
+
+
+logging.basicConfig(
+    level=os.getenv("LOG_LEVEL", "INFO").upper(),
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
 
 
 class BatchBot(commands.Bot):
