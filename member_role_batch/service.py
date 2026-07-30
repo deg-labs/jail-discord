@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import time
 from typing import Optional
 
@@ -9,6 +10,9 @@ from discord.ext import tasks
 
 from .config import AutoRoleBatchConfig
 from .rules import has_black_or_transparent_avatar, has_target_keyword
+
+
+logger = logging.getLogger(__name__)
 
 
 class AutoRoleBatchService:
@@ -29,7 +33,7 @@ class AutoRoleBatchService:
     async def _before_loop(self) -> None:
         await self.bot.wait_until_ready()
         self._loop.change_interval(minutes=self.config.interval_minutes)
-        print(
+        logger.info(
             "[auto-role] loop started "
             f"interval={self.config.interval_minutes}m "
             f"target_role={self.config.target_role_name} "
@@ -41,40 +45,40 @@ class AutoRoleBatchService:
             f"alpha_threshold={self.config.transparent_alpha_threshold} "
             f"verbose={self.config.verbose_logging}"
         )
-        print("[auto-role] initial scan start")
+        logger.info("[auto-role] initial scan start")
         await self.run_cycle()
 
     async def run_cycle(self) -> None:
         guilds = list(self.bot.guilds)
         if not guilds:
-            print("[auto-role] no guilds joined")
+            logger.warning("[auto-role] no guilds joined")
             return
 
         started = time.monotonic()
-        print(f"[auto-role] cycle start guild_count={len(guilds)}")
+        logger.info("[auto-role] cycle start guild_count=%s", len(guilds))
         for guild in guilds:
             await self._process_guild(guild)
         elapsed = time.monotonic() - started
-        print(f"[auto-role] cycle done elapsed={elapsed:.2f}s")
+        logger.info("[auto-role] cycle done elapsed=%.2fs", elapsed)
 
     async def _process_guild(self, guild: discord.Guild) -> None:
         role = discord.utils.get(guild.roles, name=self.config.target_role_name)
         if role is None:
-            print(f"[auto-role] role not found: guild={guild.id} role={self.config.target_role_name}")
+            logger.warning("[auto-role] role not found: guild=%s role=%s", guild.id, self.config.target_role_name)
             return
 
         me = guild.me
         if me is None and self.bot.user:
             me = guild.get_member(self.bot.user.id)
         if me is None:
-            print(f"[auto-role] bot member not found in guild={guild.id}")
+            logger.warning("[auto-role] bot member not found in guild=%s", guild.id)
             return
 
         manage_roles = me.guild_permissions.manage_roles
         top_role_pos = me.top_role.position if me.top_role else -1
         role_pos = role.position
         can_manage_role = top_role_pos > role_pos
-        print(
+        logger.info(
             "[auto-role] guild check "
             f"guild={guild.id} "
             f"manage_roles={manage_roles} "
@@ -83,10 +87,10 @@ class AutoRoleBatchService:
             f"can_manage_target_role={can_manage_role}"
         )
         if not manage_roles:
-            print(f"[auto-role] skip guild={guild.id} reason=missing_manage_roles_permission")
+            logger.warning("[auto-role] skip guild=%s reason=missing_manage_roles_permission", guild.id)
             return
         if not can_manage_role:
-            print(f"[auto-role] skip guild={guild.id} reason=role_hierarchy_invalid")
+            logger.warning("[auto-role] skip guild=%s reason=role_hierarchy_invalid", guild.id)
             return
 
         stats = {
@@ -107,10 +111,10 @@ class AutoRoleBatchService:
                 stats["fetched"] += 1
                 await self._process_member(member, role, stats)
         except Exception as exc:
-            print(f"[auto-role] member fetch failed: guild={guild.id} error={exc}")
+            logger.exception("[auto-role] member fetch failed: guild=%s", guild.id)
             return
 
-        print(
+        logger.info(
             "[auto-role] guild summary "
             f"guild={guild.id} fetched={stats['fetched']} bots={stats['bots']} excluded={stats['excluded']} already={stats['already']} "
             f"keyword_only={stats['keyword_only']} avatar_only={stats['avatar_only']} both_match={stats['both_match']} no_match={stats['no_match']} "
@@ -123,17 +127,17 @@ class AutoRoleBatchService:
         if member.bot:
             stats["bots"] += 1
             if self.config.verbose_logging:
-                print(f"[auto-role] skip user={member.id} reason=bot")
+                logger.debug("[auto-role] skip user=%s reason=bot", member.id)
             return
         if member.id in self.config.excluded_user_ids:
             stats["excluded"] += 1
             if self.config.verbose_logging:
-                print(f"[auto-role] skip user={member.id} reason=excluded_user")
+                logger.debug("[auto-role] skip user=%s reason=excluded_user", member.id)
             return
         if role in member.roles:
             stats["already"] += 1
             if self.config.verbose_logging:
-                print(f"[auto-role] skip user={member.id} reason=already_has_role")
+                logger.debug("[auto-role] skip user=%s reason=already_has_role", member.id)
             return
 
         icon_ok, black_ratio, transparent_ratio, avatar_error = await has_black_or_transparent_avatar(
@@ -150,7 +154,7 @@ class AutoRoleBatchService:
         else:
             stats["no_match"] += 1
             if self.config.verbose_logging:
-                print(
+                logger.debug(
                     "[auto-role] skip "
                     f"user={member.id} "
                     f"name={member.name} "
@@ -168,7 +172,7 @@ class AutoRoleBatchService:
             return
 
         if self.config.verbose_logging:
-            print(
+            logger.debug(
                 "[auto-role] eligible "
                 f"user={member.id} "
                 f"name={member.name} "
@@ -184,14 +188,14 @@ class AutoRoleBatchService:
                 reason="Auto role batch: keyword match OR black icon",
             )
             stats["added"] += 1
-            print(
+            logger.info(
                 "[auto-role] role added "
                 f"guild={member.guild.id} user={member.id} "
                 f"name={member.name} display={member.display_name} black_ratio={black_ratio}"
             )
         except Exception as exc:
             stats["failed"] += 1
-            print(
+            logger.exception(
                 "[auto-role] role add failed "
                 f"guild={member.guild.id} user={member.id} error={exc}"
             )
