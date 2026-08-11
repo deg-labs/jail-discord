@@ -8,6 +8,21 @@ from PIL import Image
 
 from .config import AutoRoleBatchConfig
 
+_AVATAR_CACHE: dict[str, bytes] = {}
+_AVATAR_CACHE_MAX = 10_000
+_AVATAR_READ_SIZE = 256
+
+# 巨大画像によるメモリ枯渇(Decompression Bomb)を防ぐためのピクセル上限
+# 256x256 のアバター解析には十分大きく、数億ピクセルの不正画像を弾く。
+Image.MAX_IMAGE_PIXELS = 4_096 * 4_096
+
+
+def _cache_avatar(key: str, data: bytes) -> bytes:
+    if len(_AVATAR_CACHE) >= _AVATAR_CACHE_MAX:
+        _AVATAR_CACHE.clear()
+    _AVATAR_CACHE[key] = data
+    return data
+
 
 def has_target_keyword(member: discord.Member, keyword: str) -> bool:
     lowered = keyword.lower()
@@ -49,10 +64,14 @@ async def has_black_or_transparent_avatar(
     if not avatar:
         return False, None, None, "avatar_missing"
 
-    try:
-        avatar_bytes = await avatar.read()
-    except Exception as exc:
-        return False, None, None, f"avatar_read_error:{exc}"
+    cache_key = f"{member.id}:{avatar.key}"
+    avatar_bytes = _AVATAR_CACHE.get(cache_key)
+    if avatar_bytes is None:
+        try:
+            # 小さいサイズ(256px)のみを取得し、CDN転送量とデコード負荷を削減
+            avatar_bytes = _cache_avatar(cache_key, await avatar.read(size=_AVATAR_READ_SIZE))
+        except Exception as exc:
+            return False, None, None, f"avatar_read_error:{exc}"
 
     try:
         black_ratio, transparent_ratio = get_icon_ratios(avatar_bytes, config)
@@ -61,6 +80,8 @@ async def has_black_or_transparent_avatar(
             or transparent_ratio >= config.transparent_ratio_threshold
         )
         return is_match, black_ratio, transparent_ratio, None
+    except Image.DecompressionBombError as exc:
+        return False, None, None, f"avatar_too_large:{exc}"
     except Exception as exc:
         return False, None, None, f"avatar_parse_error:{exc}"
 
