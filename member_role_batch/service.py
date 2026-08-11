@@ -98,8 +98,6 @@ class AutoRoleBatchService:
             "bots": 0,
             "excluded": 0,
             "already": 0,
-            "keyword_only": 0,
-            "avatar_only": 0,
             "both_match": 0,
             "no_match": 0,
             "eligible": 0,
@@ -117,7 +115,7 @@ class AutoRoleBatchService:
         logger.info(
             "[auto-role] guild summary "
             f"guild={guild.id} fetched={stats['fetched']} bots={stats['bots']} excluded={stats['excluded']} already={stats['already']} "
-            f"keyword_only={stats['keyword_only']} avatar_only={stats['avatar_only']} both_match={stats['both_match']} no_match={stats['no_match']} "
+            f"both_match={stats['both_match']} no_match={stats['no_match']} "
             f"eligible={stats['eligible']} added={stats['added']} failed={stats['failed']}"
         )
 
@@ -145,13 +143,7 @@ class AutoRoleBatchService:
         )
         keyword_ok = has_target_keyword(member, self.config.target_id_keyword)
 
-        if keyword_ok and icon_ok:
-            stats["both_match"] += 1
-        elif keyword_ok:
-            stats["keyword_only"] += 1
-        elif icon_ok:
-            stats["avatar_only"] += 1
-        else:
+        if not keyword_ok:
             stats["no_match"] += 1
             if self.config.verbose_logging:
                 logger.debug(
@@ -159,7 +151,20 @@ class AutoRoleBatchService:
                     f"user={member.id} "
                     f"name={member.name} "
                     f"display={member.display_name} "
-                    f"reason=no_or_match "
+                    f"reason=keyword_not_match "
+                    f"keyword={self.config.target_id_keyword}"
+                )
+            return
+
+        if not icon_ok:
+            stats["no_match"] += 1
+            if self.config.verbose_logging:
+                logger.debug(
+                    "[auto-role] skip "
+                    f"user={member.id} "
+                    f"name={member.name} "
+                    f"display={member.display_name} "
+                    f"reason=icon_not_match "
                     f"keyword={self.config.target_id_keyword} "
                     f"keyword_ok={keyword_ok} "
                     f"icon_ok={icon_ok} "
@@ -171,13 +176,15 @@ class AutoRoleBatchService:
                 )
             return
 
+        stats["both_match"] += 1
+
         if self.config.verbose_logging:
             logger.debug(
                 "[auto-role] eligible "
                 f"user={member.id} "
                 f"name={member.name} "
                 f"display={member.display_name} "
-                f"or_match keyword_ok={keyword_ok} icon_ok={icon_ok} "
+                f"and_match keyword_ok={keyword_ok} icon_ok={icon_ok} "
                 f"black_ratio={black_ratio} transparent_ratio={transparent_ratio}"
             )
         stats["eligible"] += 1
@@ -185,7 +192,7 @@ class AutoRoleBatchService:
         try:
             await member.add_roles(
                 role,
-                reason="Auto role batch: keyword match OR black icon",
+                reason="Auto role batch: keyword match AND black/transparent icon",
             )
             stats["added"] += 1
             logger.info(
