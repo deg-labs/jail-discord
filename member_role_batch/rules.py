@@ -69,7 +69,8 @@ async def has_black_or_transparent_avatar(
     if avatar_bytes is None:
         try:
             # 小さいサイズ(256px)のみを取得し、CDN転送量とデコード負荷を削減
-            avatar_bytes = _cache_avatar(cache_key, await avatar.read(size=_AVATAR_READ_SIZE))
+            sized_avatar = avatar.with_size(_AVATAR_READ_SIZE)
+            avatar_bytes = _cache_avatar(cache_key, await sized_avatar.read())
         except Exception as exc:
             return False, None, None, f"avatar_read_error:{exc}"
 
