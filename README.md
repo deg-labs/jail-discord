@@ -19,9 +19,10 @@
 ## 機能
 
 - 既定で5分ごと（`AUTO_ROLE_INTERVAL_MINUTES`）に全メンバーを取得
-- 次の **いずれか** を満たすユーザーに `testrole`（`AUTO_ROLE_TARGET_ROLE`）を付与
+- 次の **両方** を満たすユーザーに `testrole`（`AUTO_ROLE_TARGET_ROLE`）を付与
 1. ユーザー名または表示名に `deg5`（`AUTO_ROLE_TARGET_KEYWORD`）を含む
 2. アイコン画像がほぼ真っ黒、またはほぼ透過
+- `AUTO_ROLE_AUTHORIZED_USER_IDS` に管理者が登録したDiscordユーザーIDのみを対象とする（空の場合は自動付与しない）
 - `AUTO_ROLE_EXCLUDED_USER_IDS` に指定したユーザーIDは常に除外
 
 ## 必要な環境変数
@@ -30,6 +31,7 @@
 - `PORT`（既定: `8080`）
 - `AUTO_ROLE_TARGET_ROLE`（既定: `testrole`）
 - `AUTO_ROLE_TARGET_KEYWORD`（既定: `deg5`）
+- `AUTO_ROLE_AUTHORIZED_USER_IDS`（既定: 空、管理者が承認したユーザーIDをカンマ区切りで指定）
 - `AUTO_ROLE_EXCLUDED_USER_IDS`（既定: 空、カンマ区切りで複数指定）
 - `AUTO_ROLE_INTERVAL_MINUTES`（既定: `5`）
 - `AUTO_ROLE_BLACK_LUMINANCE_THRESHOLD`（既定: `8`）
@@ -68,7 +70,7 @@ docker compose down
 docker compose logs -f jail-discord
 ```
 
-`AUTO_ROLE_VERBOSE_LOGGING=true` のとき、判定理由（`keyword_only` / `avatar_only` / `no_or_match` など）を詳細表示します。
+`AUTO_ROLE_VERBOSE_LOGGING=true` のとき、判定理由（`keyword_not_match` / `icon_not_match` など）を詳細表示します。
 
 ## 構成
 
