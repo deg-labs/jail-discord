@@ -22,6 +22,7 @@
 - 次の **両方** を満たすユーザーに `testrole`（`AUTO_ROLE_TARGET_ROLE`）を付与
 1. ユーザー名または表示名に `deg5`（`AUTO_ROLE_TARGET_KEYWORD`）を含む
 2. アイコン画像がほぼ真っ黒、またはほぼ透過
+- `AUTO_ROLE_AUTHORIZED_USER_IDS` に管理者が登録したDiscordユーザーIDのみを対象とする（空の場合は自動付与しない）
 - `AUTO_ROLE_EXCLUDED_USER_IDS` に指定したユーザーIDは常に除外
 
 ## 必要な環境変数
@@ -30,6 +31,7 @@
 - `PORT`（既定: `8080`）
 - `AUTO_ROLE_TARGET_ROLE`（既定: `testrole`）
 - `AUTO_ROLE_TARGET_KEYWORD`（既定: `deg5`）
+- `AUTO_ROLE_AUTHORIZED_USER_IDS`（既定: 空、管理者が承認したユーザーIDをカンマ区切りで指定）
 - `AUTO_ROLE_EXCLUDED_USER_IDS`（既定: 空、カンマ区切りで複数指定）
 - `AUTO_ROLE_INTERVAL_MINUTES`（既定: `5`）
 - `AUTO_ROLE_BLACK_LUMINANCE_THRESHOLD`（既定: `8`）

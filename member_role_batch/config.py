@@ -6,6 +6,7 @@ from dataclasses import dataclass
 class AutoRoleBatchConfig:
     target_role_name: str = "testrole"
     target_id_keyword: str = "deg5"
+    authorized_user_ids: frozenset[int] = frozenset()
     excluded_user_ids: frozenset[int] = frozenset()
     interval_minutes: int = 5
     black_luminance_threshold: int = 8
@@ -24,9 +25,16 @@ class AutoRoleBatchConfig:
                 continue
             if item.isdigit():
                 excluded_ids.add(int(item))
+        raw_authorized = os.getenv("AUTO_ROLE_AUTHORIZED_USER_IDS", "")
+        authorized_ids: set[int] = set()
+        for value in raw_authorized.split(","):
+            item = value.strip()
+            if item and item.isdigit():
+                authorized_ids.add(int(item))
         return cls(
             target_role_name=os.getenv("AUTO_ROLE_TARGET_ROLE", "testrole"),
             target_id_keyword=os.getenv("AUTO_ROLE_TARGET_KEYWORD", "deg5"),
+            authorized_user_ids=frozenset(authorized_ids),
             excluded_user_ids=frozenset(excluded_ids),
             interval_minutes=max(1, int(os.getenv("AUTO_ROLE_INTERVAL_MINUTES", "5"))),
             black_luminance_threshold=max(

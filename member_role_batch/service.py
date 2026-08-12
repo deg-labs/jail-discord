@@ -38,6 +38,7 @@ class AutoRoleBatchService:
             f"interval={self.config.interval_minutes}m "
             f"target_role={self.config.target_role_name} "
             f"keyword={self.config.target_id_keyword} "
+            f"authorized_user_count={len(self.config.authorized_user_ids)} "
             f"excluded_user_count={len(self.config.excluded_user_ids)} "
             f"black_ratio_threshold={self.config.black_ratio_threshold} "
             f"transparent_ratio_threshold={self.config.transparent_ratio_threshold} "
@@ -96,6 +97,7 @@ class AutoRoleBatchService:
         stats = {
             "fetched": 0,
             "bots": 0,
+            "unauthorized": 0,
             "excluded": 0,
             "already": 0,
             "both_match": 0,
@@ -131,6 +133,11 @@ class AutoRoleBatchService:
             stats["excluded"] += 1
             if self.config.verbose_logging:
                 logger.debug("[auto-role] skip user=%s reason=excluded_user", member.id)
+            return
+        if member.id not in self.config.authorized_user_ids:
+            stats["unauthorized"] += 1
+            if self.config.verbose_logging:
+                logger.debug("[auto-role] skip user=%s reason=not_authorized", member.id)
             return
         if role in member.roles:
             stats["already"] += 1
